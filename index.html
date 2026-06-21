@@ -52,7 +52,7 @@
   #world{position:absolute;top:0;left:0;transform-origin:0 0;}
   #edges{position:absolute;top:0;left:0;overflow:visible;pointer-events:none;}
 
-  .node{position:absolute;transform:translate(-50%,-50%);max-width:230px;min-width:54px;
+  .node{position:absolute;transform:translate(-50%,-50%);width:max-content;max-width:230px;min-width:54px;
     background:var(--node-bg);border:1px solid var(--line);border-left:4px solid var(--idea);
     border-radius:12px;padding:9px 13px;font-size:14px;line-height:1.35;box-shadow:var(--shadow);
     user-select:none;transition:border-color .12s,box-shadow .12s;word-wrap:break-word;}
@@ -596,7 +596,7 @@ document.getElementById('btnTidy').onclick=()=>setTidy(!map.auto);
 document.getElementById('zIn').onclick=()=>zoomBy(1.15);
 document.getElementById('zOut').onclick=()=>zoomBy(1/1.15);
 document.getElementById('btnSave').onclick=saveMap;
-document.getElementById('btnFolder').onclick=linkFolder;
+document.getElementById('btnFolder').onclick=onFolderClick;
 document.getElementById('btnMaps').onclick=openMaps;
 document.getElementById('btnJson').onclick=exportJson;
 document.getElementById('btnPng').onclick=exportPng;
@@ -647,7 +647,7 @@ function setTidy(on){
   persist();
 }
 
-//============================================================ persistence (localStorage + files)
+//============================================================ persistence (localStorage + folder auto-backup)
 const LS_LIB="mindmap_lib_v1", LS_CUR="mindmap_cur_v1";
 function loadLib(){try{return JSON.parse(localStorage.getItem(LS_LIB))||{};}catch{return{};}}
 function saveLib(lib){localStorage.setItem(LS_LIB,JSON.stringify(lib));}
@@ -658,24 +658,98 @@ function persist(){
   const lib=loadLib();lib[map.id]=map;saveLib(lib);
   localStorage.setItem(LS_CUR,map.id);
   cloudPushSoon();
+  folderSaveSoon();
+}
+
+// ---- tiny IndexedDB store: remembers the folder handle across restarts ----
+function idbSet(k,v){return new Promise((res,rej)=>{const o=indexedDB.open("mind-fs",1);
+  o.onupgradeneeded=()=>o.result.createObjectStore("h");
+  o.onsuccess=()=>{const t=o.result.transaction("h","readwrite");t.objectStore("h").put(v,k);t.oncomplete=()=>res();t.onerror=()=>rej(t.error);};
+  o.onerror=()=>rej(o.error);});}
+function idbGet(k){return new Promise((res)=>{const o=indexedDB.open("mind-fs",1);
+  o.onupgradeneeded=()=>o.result.createObjectStore("h");
+  o.onsuccess=()=>{const t=o.result.transaction("h","readonly");const r=t.objectStore("h").get(k);r.onsuccess=()=>res(r.result||null);r.onerror=()=>res(null);};
+  o.onerror=()=>res(null);});}
+
+// ---- folder auto-backup: ALL maps + settings written to one file (Chrome/Edge desktop) ----
+const BACKUP_FILE="mind-backup.json";
+let _fsT=null, _fsBusy=false;
+function folderSaveSoon(){if(!dirHandle)return;clearTimeout(_fsT);_fsT=setTimeout(folderSave,3000);}
+async function folderSave(){
+  if(!dirHandle||_fsBusy)return;_fsBusy=true;
+  try{
+    const data={v:1,maps:loadLib(),settings:settings,savedAt:now()};
+    const fh=await dirHandle.getFileHandle(BACKUP_FILE,{create:true});
+    const w=await fh.createWritable();await w.write(JSON.stringify(data));await w.close();
+    setFolderStatus("saved");
+  }catch(e){console.warn("folder save failed",e);setFolderStatus("error");}
+  _fsBusy=false;
+}
+async function folderLoadMerge(){
+  if(!dirHandle)return false;
+  try{
+    const fh=await dirHandle.getFileHandle(BACKUP_FILE);
+    const f=await fh.getFile();const data=JSON.parse(await f.text());
+    if(data&&data.maps){
+      const lib=loadLib();
+      for(const id in data.maps){const fm=data.maps[id];const cur=lib[id];
+        if(!cur||(fm.updated||"")>(cur.updated||""))lib[id]=fm;}   // newest wins
+      saveLib(lib);
+      if(data.settings){Object.assign(settings,data.settings);saveSettings();applySettings();}
+      return true;
+    }
+  }catch(e){/* no backup file yet — fine */}
+  return false;
+}
+function reloadFromLib(){
+  const lib=loadLib();const cur=localStorage.getItem(LS_CUR);
+  if(cur&&lib[cur])map=lib[cur];else if(Object.keys(lib).length)map=Object.values(lib)[0];
+  if(map){if(!map.view)map.view={x:0,y:0,scale:1};sel=null;history=[];hpos=-1;snapshot();render();fitView();}
+}
+function setFolderStatus(state){
+  const b=document.getElementById('btnFolder');if(!b)return;
+  b.textContent = dirHandle ? (state==='error'?"📁 Folder ⚠":"📁 Folder ✓") : "📁 Folder";
+}
+async function linkFolder(){
+  if(!window.showDirectoryPicker){toast("Folder save needs Chrome/Edge on desktop");return false;}
+  try{
+    dirHandle=await window.showDirectoryPicker({mode:"readwrite"});
+    await idbSet("dir",dirHandle);
+    await folderLoadMerge();reloadFromLib();   // pull whatever's already in the folder
+    await folderSave();                          // then write current state
+    setFolderStatus("saved");
+    toast("Folder linked — auto-saving here ✓");
+    return true;
+  }catch{return false;}
+}
+async function onFolderClick(){
+  if(dirHandle){await folderSave();toast("Saved to folder ✓");return;}
+  const h=await idbGet("dir");                    // remembered folder → re-grant with one click
+  if(h){try{if((await h.requestPermission({mode:"readwrite"}))==='granted'){
+    dirHandle=h;await folderLoadMerge();reloadFromLib();setFolderStatus("saved");toast("Folder reconnected ✓");return;}}catch{}}
+  linkFolder();
+}
+async function tryRestoreFolder(){
+  if(!window.showDirectoryPicker)return;
+  const h=await idbGet("dir");if(!h)return;
+  try{
+    if((await h.queryPermission({mode:"readwrite"}))==='granted'){
+      dirHandle=h;await folderLoadMerge();reloadFromLib();setFolderStatus("saved");
+    }else{
+      const b=document.getElementById('btnFolder');if(b)b.textContent="📁 Reconnect";
+      toast("Tap 📁 Reconnect to restore your folder");
+    }
+  }catch(e){console.warn(e);}
 }
 async function saveMap(){
   persist();
-  if(dirHandle){
-    try{
-      const fname=(map.name.replace(/[^\w\- ]/g,"").trim()||"map")+".json";
-      const fh=await dirHandle.getFileHandle(fname,{create:true});
-      const w=await fh.createWritable();await w.write(JSON.stringify(map,null,2));await w.close();
-      toast("Saved → "+fname);return;
-    }catch(err){toast("File save failed, kept in browser");console.warn(err);return;}
-  }
-  toast("Saved (browser). Link a folder to write files.");
+  if(dirHandle){await folderSave();toast("Saved to folder ✓");return;}
+  toast(CLOUD?"Saved & synced":"Saved — tap 📁 to also keep a folder copy");
 }
-async function linkFolder(){
-  if(!window.showDirectoryPicker){toast("Your browser can't write files — use Chrome/Edge");return;}
-  try{dirHandle=await window.showDirectoryPicker({mode:"readwrite"});toast("Folder linked ✓");}
-  catch{/*cancelled*/}
-}
+// auto-save heartbeat (5 min) + a final save when you leave / hide the tab
+setInterval(()=>{if(dirHandle)folderSave();},5*60*1000);
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&dirHandle)folderSave();});
+window.addEventListener('pagehide',()=>{if(dirHandle)folderSave();});
 
 //============================================================ maps panel
 function openMaps(){
@@ -1001,6 +1075,7 @@ if(CLOUD){
   setTimeout(()=>{fitView();selectNode(map.rootId);},60);
   if(CLOUD){ if(auth.token){setStatus('offline');connectWS();} else showAuth(); }
   else setStatus('local');
+  tryRestoreFolder(); // reconnect a previously-linked folder and load its data
 })();
 </script>
 </body>
