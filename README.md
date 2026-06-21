@@ -26,28 +26,32 @@ There is **no login and no server**. Nothing ever leaves your device. Data is sa
 
 You can also grab a one-off backup anytime with **⤓ JSON**, or move maps between devices via **🗂 Maps → import**.
 
-## 🚀 Use it
-- **Just open `index.html`** in any modern browser (Chrome / Edge / Safari).
-- Or host the folder anywhere static — e.g. **GitHub Pages**:
-  1. Push this folder to a repo.
-  2. Repo → **Settings → Pages** → deploy from the `main` branch.
-  3. Open the Pages URL → on mobile, **Share → Add to Home Screen** for an app icon.
+## 🚀 Open it
 
-All paths are relative, so it works from the root *or* a subfolder.
+### 👉 Live app: **https://greatestselfhelp.github.io/Mind/**
 
-## 💻 Install as an app (PC)
-Open the site in **Chrome** or **Edge**, then:
-1. Look at the right end of the address bar for the **install icon** (a small monitor with a ⊕, or a ⬇️ in a box). *Or* open the **⋮** menu → **Cast, save, and share → Install this page as an app** (Chrome) / **Apps → Install this site as an app** (Edge).
-2. Click **Install**.
-3. Mind opens in its own window and gets a **Start-menu / desktop / taskbar** shortcut — launch it like any normal program.
+That link **is** the app — just open it in your browser and start using it. No download, no sign-up. Want it as a proper app with its own icon? Install it (free) using the steps below.
 
-It runs full-screen, **works offline**, and updates automatically when the hosted version changes. To remove it: open the app → **⋮ menu → Uninstall** (or right-click the taskbar/Start icon → Uninstall).
+## 💻 Install on PC (Windows / Mac — Chrome or Edge)
+1. Open **https://greatestselfhelp.github.io/Mind/** in **Chrome** or **Edge**.
+2. Look at the **right end of the address bar** (where the URL is) for a small **install icon** — a monitor with a ⊕, or a ⬇️ inside a box. Click it.
+   - Don't see it? Open the **⋮** menu (top-right) → **Cast, save, and share → Install page as app…** (Chrome), or **Apps → Install this site as an app** (Edge).
+3. Click **Install** in the little popup.
+4. Done — Mind now opens in its **own window** with a **desktop / Start-menu / taskbar** icon, like a normal program. It runs full-screen and **works offline**.
 
-> No install icon? Make sure you opened the **hosted URL** (e.g. your GitHub Pages link) over `https://`, not a local `file://` — browsers only offer install on a served page.
+> *To uninstall later:* open Mind → **⋮ menu → Uninstall**, or right-click its taskbar/Start icon → **Uninstall**.
 
-## 📱 Install as an app (iPhone / iPad / Android)
-- **iPhone / iPad:** open in **Safari** → **Share** → **Add to Home Screen**.
-- **Android:** open in **Chrome** → **⋮ menu** → **Add to Home screen / Install app**.
+## 📱 Install on iPhone / iPad
+1. Open **https://greatestselfhelp.github.io/Mind/** in **Safari** (it must be Safari — not Chrome).
+2. Tap the **Share** button (the square with an ↑ arrow, at the bottom or top of Safari).
+3. Scroll down and tap **Add to Home Screen**.
+4. Tap **Add** (top-right). The **Mind** icon appears on your home screen — tap it to open full-screen.
+
+## 🤖 Install on Android
+1. Open **https://greatestselfhelp.github.io/Mind/** in **Chrome**.
+2. Tap the **⋮** menu (top-right).
+3. Tap **Add to Home screen** (or **Install app**) → **Install / Add**.
+4. The **Mind** icon lands on your home screen.
 
 ## ⌨️ Controls
 | Action | How |
@@ -59,6 +63,10 @@ It runs full-screen, **works offline**, and updates automatically when the hoste
 | Pan / zoom | drag empty space / scroll · pinch on touch |
 | Fit to screen | ⤢ Fit |
 | Save to a folder | 📁 Folder (then it auto-saves) |
+
+## 🛠️ Run your own copy (developers)
+- **Locally:** download the files and open `index.html` in Chrome/Edge.
+- **Host it free** on GitHub Pages: fork/push this folder → repo **Settings → Pages → Deploy from branch → `main` → / (root)**. Your copy will be live at `https://<your-username>.github.io/<repo>/`. All paths are relative, so it works from the root *or* a subfolder.
 
 ## License
 MIT — see [LICENSE](LICENSE). Built with Claude.
