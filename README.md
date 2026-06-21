@@ -11,10 +11,20 @@ A fast, beautiful, **offline** mind-map app in a single HTML file. No install, n
 - **📋 Today** gathers every task across all your maps into one checklist.
 - **🎨 Themes** — 6 backgrounds (incl. light mode), accent colors, branch styles.
 - **Multiple maps**, search, undo/redo, pinch-zoom, and **PNG / Markdown / JSON export**.
+- **📁 Folder auto-save** — keep a live copy of everything in a folder on your disk (survives browser cache resets).
 - **Installable** — add it to your home screen (phone) or install it (desktop) for a full-screen, offline app.
 
 ## 🔒 Privacy
-There is **no login and no server**. Maps are saved in your browser (and optionally to files on disk via the 📁 button). Nothing ever leaves your device. To back up or move your maps, use **⤓ JSON** export / the 🗂 Maps import, or link a folder with 📁.
+There is **no login and no server**. Nothing ever leaves your device. Data is saved two ways:
+
+1. **Browser storage (always on).** Maps live in your browser's `localStorage`, tied to the site address. Per-browser, per-device. *Caveat: clearing your browser data — or using private/incognito mode — erases it.* So for anything important, also use the folder backup below.
+2. **📁 Folder auto-save (Chrome/Edge desktop).** Click **📁 Folder** once and pick a folder — the app writes **all** your maps + settings to a single `mind-backup.json` there and keeps it updated automatically:
+   - saves a few seconds after each edit, **every 5 minutes**, and when you close/hide the tab;
+   - **auto-reloads** that folder the next time you open the app;
+   - **survives a cache reset** — your data is safe in the file and merges back in.
+   - After a full cache wipe the browser forgets *which* folder it was → just click **📁 Reconnect** once and pick the same folder.
+
+You can also grab a one-off backup anytime with **⤓ JSON**, or move maps between devices via **🗂 Maps → import**.
 
 ## 🚀 Use it
 - **Just open `index.html`** in any modern browser (Chrome / Edge / Safari).
@@ -48,6 +58,7 @@ It runs full-screen, **works offline**, and updates automatically when the hoste
 | Undo / redo | `Ctrl+Z` / `Ctrl+Shift+Z` |
 | Pan / zoom | drag empty space / scroll · pinch on touch |
 | Fit to screen | ⤢ Fit |
+| Save to a folder | 📁 Folder (then it auto-saves) |
 
 ## License
 MIT — see [LICENSE](LICENSE). Built with Claude.
