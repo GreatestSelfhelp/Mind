@@ -25,6 +25,20 @@ There is **no login and no server**. Maps are saved in your browser (and optiona
 
 All paths are relative, so it works from the root *or* a subfolder.
 
+## 💻 Install as an app (PC)
+Open the site in **Chrome** or **Edge**, then:
+1. Look at the right end of the address bar for the **install icon** (a small monitor with a ⊕, or a ⬇️ in a box). *Or* open the **⋮** menu → **Cast, save, and share → Install this page as an app** (Chrome) / **Apps → Install this site as an app** (Edge).
+2. Click **Install**.
+3. Mind opens in its own window and gets a **Start-menu / desktop / taskbar** shortcut — launch it like any normal program.
+
+It runs full-screen, **works offline**, and updates automatically when the hosted version changes. To remove it: open the app → **⋮ menu → Uninstall** (or right-click the taskbar/Start icon → Uninstall).
+
+> No install icon? Make sure you opened the **hosted URL** (e.g. your GitHub Pages link) over `https://`, not a local `file://` — browsers only offer install on a served page.
+
+## 📱 Install as an app (iPhone / iPad / Android)
+- **iPhone / iPad:** open in **Safari** → **Share** → **Add to Home Screen**.
+- **Android:** open in **Chrome** → **⋮ menu** → **Add to Home screen / Install app**.
+
 ## ⌨️ Controls
 | Action | How |
 |---|---|
