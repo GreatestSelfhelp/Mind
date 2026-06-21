@@ -15,16 +15,36 @@ A fast, beautiful, **offline** mind-map app in a single HTML file. No install, n
 - **Installable** — add it to your home screen (phone) or install it (desktop) for a full-screen, offline app.
 
 ## 🔒 Privacy
-There is **no login and no server**. Nothing ever leaves your device. Data is saved two ways:
+**No login, no server, no tracking.** Your maps never leave your device — they're saved locally, and that's it.
 
-1. **Browser storage (always on).** Maps live in your browser's `localStorage`, tied to the site address. Per-browser, per-device. *Caveat: clearing your browser data — or using private/incognito mode — erases it.* So for anything important, also use the folder backup below.
-2. **📁 Folder auto-save (Chrome/Edge desktop).** Click **📁 Folder** once and pick a folder — the app writes **all** your maps + settings to a single `mind-backup.json` there and keeps it updated automatically:
-   - saves a few seconds after each edit, **every 5 minutes**, and when you close/hide the tab;
-   - **auto-reloads** that folder the next time you open the app;
-   - **survives a cache reset** — your data is safe in the file and merges back in.
-   - After a full cache wipe the browser forgets *which* folder it was → just click **📁 Reconnect** once and pick the same folder.
+## 💾 How saving works (please read)
+There's **no Save button to remember** — Mind saves as you go. There are two layers:
 
-You can also grab a one-off backup anytime with **⤓ JSON**, or move maps between devices via **🗂 Maps → import**.
+### 1. In the browser — automatic, always on
+The moment you type, your maps are saved into the **browser's own storage** (`localStorage`) on that device. Close the tab and reopen the link → everything's still there. Nothing to press.
+
+**But know this:** that storage belongs to *one browser on one device*. It does **not** sync between your phone and PC, and it gets **erased if you clear your browsing data / site data, or if you use private/incognito mode.** Great for everyday use — not a safe long-term home on its own. That's what layer 2 is for.
+
+### 2. Save to a folder on your computer — your real backup *(Chrome / Edge on desktop)*
+This writes your data to an actual file on your disk, so it's safe even if the browser forgets everything.
+
+**How to turn it on (once):**
+1. Click **📁 Folder** in the top bar.
+2. Pick a folder (e.g. make one called `Mind`) and allow access.
+3. That's it. The app creates **`mind-backup.json`** in that folder containing **all** your maps + settings.
+
+**After that it's automatic** — Mind re-saves to that file:
+- a few seconds after any change,
+- **every 5 minutes**, and
+- when you **close or switch away** from the tab.
+
+**Loading it back:** next time you open Mind, it **reconnects to that folder and loads your data automatically.** If the browser asks for permission again (or the button shows **📁 Reconnect**), just click it once and choose the same folder — your maps reappear. This is how your data **survives a cache wipe**: it's sitting safely in `mind-backup.json`, and reconnecting merges it right back.
+
+### Move to another device / extra backups
+- **One-off backup:** **⤓ JSON** downloads a file you can keep anywhere.
+- **Move between devices / restore:** **🗂 Maps → import** to load a `.json` back in, or point the new device at a copy of your `mind-backup.json` folder.
+
+> 📱 On **iPhone/iPad/Android**, browsers don't allow folder access, so only layer 1 (browser storage) is available there — use **⤓ JSON** export for backups, or use the synced cloud version if you have one.
 
 ## 🚀 Open it
 
