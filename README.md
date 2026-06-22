@@ -13,6 +13,7 @@ A fast, beautiful, **offline** mind-map app in a single HTML file. No install, n
 - **📋 Today** gathers every task across all your maps into one checklist.
 - **🎨 Themes** — 6 backgrounds (incl. light mode), accent colors, branch styles.
 - **Multiple maps**, search, undo/redo, pinch-zoom, and **PNG / Markdown / JSON export**.
+- **Group & duplicate branches** — `Shift+click` (or the **＋ Group** button) to multi-select nodes, then **copy** a node *with all its sub-points* and **paste** them under any node — or **delete the whole group** at once.
 - **📁 Folder auto-save** — keep a live copy of everything in a folder on your disk (survives browser cache resets).
 - **Installable** — add it to your home screen (phone) or install it (desktop) for a full-screen, offline app.
 
@@ -81,6 +82,10 @@ That link **is** the app — just open it in your browser and start using it. No
 | Add sub-point / same-level | `Tab` / `Enter` (or the ＋ buttons on a node) |
 | Edit text | double-click, `F2`, or the name field in the panel |
 | Check off a task | tap the ✅ box |
+| Add to group | `Shift+click` a node (or **＋ Group** in the panel) |
+| Copy node + sub-points | `Ctrl+C` (or **📋 Copy**) — copies the node, or the whole group |
+| Paste as sub-points | select a node, `Ctrl+V` (or **📌 Paste**) |
+| Delete node / group | `Delete` (or **🗑** in the panel) |
 | Undo / redo | `Ctrl+Z` / `Ctrl+Shift+Z` |
 | Pan / zoom | drag empty space / scroll · pinch on touch |
 | Fit to screen | ⤢ Fit |
