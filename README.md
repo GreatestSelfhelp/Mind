@@ -1,8 +1,10 @@
+![Mind — your mind, mapped](banner.png)
+
 # ◈ Mind — your mind, mapped
 
 A fast, beautiful, **offline** mind-map app in a single HTML file. No install, no accounts, no servers, no tracking. **All your data stays on your device.**
 
-![icon](icon-192.png)
+### 👉 Try it: **https://greatestselfhelp.github.io/Mind/**
 
 ## ✨ Features
 - **Drag-free thinking** — `Tab` adds a sub-point, `Enter` adds a node at the same level; **✨ Tidy** auto-arranges the whole tree.

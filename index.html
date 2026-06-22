@@ -876,8 +876,13 @@ function exportJson(){
   dl(blob,(map.name||"map")+".json");toast("JSON downloaded");
 }
 function dl(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();URL.revokeObjectURL(a.href);}
-function exportPng(){
+async function exportPng(){
   const ns=Object.values(map.nodes).filter(n=>!isHidden(n));if(!ns.length)return;
+  // make sure any attached node images are fully loaded before we draw
+  const pending=[];
+  ns.forEach(n=>{const el=nodeEls.get(n.id);const im=el&&el.querySelector('.nimg');
+    if(im&&!(im.complete&&im.naturalWidth))pending.push(new Promise(r=>{im.onload=im.onerror=r;}));});
+  if(pending.length){toast("Preparing images…");await Promise.all(pending);}
   let minX=1e9,minY=1e9,maxX=-1e9,maxY=-1e9;
   ns.forEach(n=>{const el=nodeEls.get(n.id);const w=el?el.offsetWidth:120,h=el?el.offsetHeight:40;
     minX=Math.min(minX,n.x-w/2);maxX=Math.max(maxX,n.x+w/2);minY=Math.min(minY,n.y-h/2);maxY=Math.max(maxY,n.y+h/2);});
@@ -900,7 +905,16 @@ function exportPng(){
     c.fillStyle=n.done?cDim:cTxt;c.font=(n.id===map.rootId?"bold 16px":"14px")+" Segoe UI,sans-serif";
     c.textBaseline="middle";const ic=n.icon||(n.type!=='task'?TYPE_BADGE[n.type]:"");
     const pref=(n.type==='task'?(n.done?'✓ ':'☐ '):"")+(ic?ic+' ':'');
-    c.fillText(pref+n.text,x+13,n.y,w-22);}
+    const ntx=el&&el.querySelector('.ntext');
+    const lineY=ntx?(y+ntx.offsetTop+ntx.offsetHeight/2):n.y;       // anchor text to its real line
+    c.fillText(pref+n.text,x+13,lineY,w-22);
+    const im=el&&el.querySelector('.nimg');                          // draw the attached image
+    if(im&&im.naturalWidth){
+      const ix=x+im.offsetLeft, iy=y+im.offsetTop, iw=im.offsetWidth, ih=im.offsetHeight;
+      c.save();roundRect(c,ix,iy,iw,ih,8);c.clip();
+      try{c.drawImage(im,ix,iy,iw,ih);}catch(e){}
+      c.restore();
+    }}
   cv.toBlob(b=>{dl(b,(map.name||"map")+".png");toast("PNG downloaded");});
 }
 function roundRect(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
