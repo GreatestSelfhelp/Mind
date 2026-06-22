@@ -95,5 +95,18 @@ That link **is** the app — just open it in your browser and start using it. No
 - **Locally:** download the files and open `index.html` in Chrome/Edge.
 - **Host it free** on GitHub Pages: fork/push this folder → repo **Settings → Pages → Deploy from branch → `main` → / (root)**. Your copy will be live at `https://<your-username>.github.io/<repo>/`. All paths are relative, so it works from the root *or* a subfolder.
 
+## ♥ Support / Donate
+Mind is free and open-source. If it's useful to you, you can leave a small tip via **Thai PromptPay** — it's genuinely appreciated. 🙏
+
+<p align="center">
+  <img src="donate-promptpay.png" alt="PromptPay QR — ศุภกร สุ่มมาตย์" width="300">
+</p>
+
+**PromptPay · ศุภกร สุ่มมาตย์**
+
+## 🔗 Links
+- **GitHub:** https://github.com/GreatestSelfhelp/Mind
+- **Facebook:** https://www.facebook.com/fuifuiearthzu
+
 ## License
 MIT — see [LICENSE](LICENSE). Built with Claude.

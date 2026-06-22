@@ -37,6 +37,11 @@
   .tb:hover{background:#28313f;border-color:#3a4658;}
   .tb.primary{background:var(--accent);color:#0b1220;border-color:var(--accent);font-weight:600;}
   .tb.primary:hover{filter:brightness(1.08);}
+  a.tb{text-decoration:none;cursor:pointer;}
+  .tb.tbi{padding:7px 9px;color:var(--txt-dim);}
+  .tb.tbi:hover{color:var(--txt);}
+  #btnDonate{color:#ff7b9c;font-size:15px;line-height:1;}
+  #btnDonate:hover{color:#ff9bb3;}
   #mapName{background:var(--bg2);border:1px solid var(--line);color:var(--txt);border-radius:8px;
     padding:7px 10px;font-size:13px;min-width:140px;}
   #search{background:var(--bg2);border:1px solid var(--line);color:var(--txt);border-radius:8px;
@@ -218,6 +223,13 @@
   <button class="tb" id="btnMd" title="export as markdown outline">📑 MD</button>
   <button class="tb" id="btnJson">⤓ JSON</button>
   <button id="acct" title="account & sync status"><span class="dot"></span><span id="acctName">offline</span></button>
+  <a class="tb tbi" id="lnkGithub" href="https://github.com/GreatestSelfhelp/Mind" target="_blank" rel="noopener" title="View source on GitHub" aria-label="GitHub">
+    <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 014-.27 7.6 7.6 0 014 .27c1.53-1.03 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+  </a>
+  <a class="tb tbi" id="lnkFb" href="https://www.facebook.com/fuifuiearthzu" target="_blank" rel="noopener" title="Follow on Facebook" aria-label="Facebook">
+    <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M16 8a8 8 0 10-9.25 7.9v-5.59H4.72V8h2.03V6.24c0-2 1.2-3.11 3.02-3.11.87 0 1.79.16 1.79.16v1.96h-1c-.98 0-1.29.61-1.29 1.24V8h2.2l-.35 2.31H9.27v5.59A8 8 0 0016 8z"/></svg>
+  </a>
+  <button class="tb tbi" id="btnDonate" title="Support / donate via Thai PromptPay" aria-label="Donate">♥</button>
 </div>
 
 <div id="authOverlay">
@@ -708,6 +720,7 @@ document.getElementById('btnPng').onclick=exportPng;
 document.getElementById('btnMd').onclick=exportMarkdown;
 document.getElementById('btnToday').onclick=openToday;
 document.getElementById('btnTheme').onclick=openTheme;
+document.getElementById('btnDonate').onclick=openDonate;
 document.getElementById('btnCap').onclick=openCapture;
 
 function zoomBy(f){const r=VP.getBoundingClientRect();const mx=r.width/2,my=r.height/2;
@@ -1024,6 +1037,15 @@ function showModal(html){
   document.getElementById('modalClose').onclick=closeModal;
 }
 function closeModal(){const m=document.getElementById('modal');if(m)m.style.display='none';}
+function openDonate(){
+  showModal(`<div style="text-align:center;">
+    <div style="font-weight:700;font-size:16px;margin-bottom:4px;">♥ Support Mind</div>
+    <p style="color:var(--txt-dim);font-size:13px;margin:0 0 14px;">Mind is free &amp; open-source. If it helps you, a small tip via Thai PromptPay keeps it going — thank you! 🙏</p>
+    <img src="donate-promptpay.png" alt="PromptPay QR" style="width:100%;max-width:280px;border-radius:12px;display:block;margin:0 auto;background:#fff;" onerror="this.style.display='none';this.nextElementSibling.style.display='block';">
+    <div style="display:none;color:var(--txt-dim);font-size:13px;padding:24px 0;">QR image coming soon.</div>
+    <div style="margin-top:10px;font-size:13px;color:var(--txt-dim);">PromptPay · ศุภกร สุ่มมาตย์</div>
+  </div>`);
+}
 
 //============================================================ settings / theme
 const LS_SET="mindmap_settings_v1";
