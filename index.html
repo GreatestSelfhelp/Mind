@@ -75,6 +75,7 @@
   .node.haskids .collapse{display:block;}
   .node.dim{opacity:.25;}
   .node.hit{border-color:var(--note);box-shadow:0 0 0 2px var(--note),var(--shadow);}
+  .node.grp{outline:2px dashed var(--accent);outline-offset:3px;}
 
   /* ---------- inspector ---------- */
   #inspector{position:fixed;top:58px;right:10px;width:250px;background:var(--panel);
@@ -102,6 +103,11 @@
     border-radius:8px;padding:8px;font-size:13px;resize:vertical;font-family:inherit;}
   .del{width:100%;background:#3a1f23;border:1px solid #5b2a2f;color:#ff9b9b;border-radius:8px;padding:8px;margin-top:10px;font-size:13px;}
   .del:hover{background:#4a262b;}
+  #grpRow .addbtn{background:var(--panel2);color:var(--txt);border:1px solid var(--line);}
+  #grpRow .addbtn.on{border-color:var(--accent);background:#26344a;}
+  #grpRow .addbtn.dis{opacity:.45;}
+  #grpInfo{font-size:12px;color:var(--txt-dim);margin:-2px 0 8px;}
+  #grpInfo a{color:var(--accent);text-decoration:none;}
 
   /* ---------- today / capture / theme ---------- */
   .taskrow{display:flex;align-items:center;gap:9px;padding:8px 9px;border:1px solid var(--line);
@@ -247,6 +253,12 @@
     <button class="addbtn" id="btnAddChild" title="add a sub-point under this node (Tab)">＋ Sub-point</button>
     <button class="addbtn" id="btnAddSib" title="add a node at the same level (Enter)">＋ Same level</button>
   </div>
+  <div class="row" id="grpRow">
+    <button class="addbtn" id="btnGroup" title="add/remove this node from the group (or Shift+click the node)">＋ Group</button>
+    <button class="addbtn" id="btnCopy" title="copy this node (or the group) with its sub-points (Ctrl+C)">📋 Copy</button>
+    <button class="addbtn" id="btnPaste" title="paste the copied nodes as sub-points here (Ctrl+V)">📌 Paste</button>
+  </div>
+  <div id="grpInfo"></div>
   <div class="row" id="types">
     <button class="typebtn" data-t="idea">💡 Idea</button>
     <button class="typebtn" data-t="task">✅ Task</button>
@@ -300,6 +312,8 @@ const COLORS=["#6ea8fe","#56d364","#e3b341","#bc8cff","#ff7b72","#7ee0d3","#f088
 const TYPE_BADGE={idea:"💡",task:"",note:"📝",journal:"🌙"};
 let map=null;          // {id,name,nodes:{},rootId,view:{x,y,scale}}
 let sel=null;          // selected node id
+let group=new Set();   // multi-selected node ids (Shift+click / ＋ Group) for copy + group delete
+let clipboard=null;    // copied subtrees, ready to paste as sub-points
 let history=[], hpos=-1;
 let dirHandle=null;    // linked folder (File System Access)
 
@@ -367,6 +381,7 @@ function render(){
     el.dataset.id=n.id;el.dataset.type=n.type;
     if(n.id===map.rootId)el.classList.add('root');
     if(n.id===sel)el.classList.add('sel');
+    if(group.has(n.id))el.classList.add('grp');
     if(n.done)el.classList.add('done');
     const kids=childrenOf(n.id);
     if(kids.length)el.classList.add('haskids');
@@ -452,6 +467,64 @@ function deleteNode(id){
   delete map.nodes[id];sel=null;snapshot();if(map.auto)autoLayout();render();persist();toast("Deleted");
 }
 function selectNode(id){sel=id;render();}
+
+//============================================================ multi-select group + copy/paste
+function toggleGroup(id){
+  if(!id||!map.nodes[id])return;
+  if(group.has(id))group.delete(id); else group.add(id);
+  sel=id; render();
+}
+// the selected ids that have no selected ancestor — the true "roots" of the selection
+function selectionRoots(ids){
+  const set=new Set(ids);
+  return [...set].filter(id=>{
+    let p=map.nodes[id]?map.nodes[id].parentId:null;
+    while(p){ if(set.has(p))return false; p=map.nodes[p]?map.nodes[p].parentId:null; }
+    return true;
+  });
+}
+function captureSubtree(id){
+  const n=map.nodes[id];
+  return {node:{text:n.text,type:n.type,color:n.color,icon:n.icon||"",notes:n.notes||"",done:!!n.done},
+          children:childrenOf(id).map(c=>captureSubtree(c.id))};
+}
+function countTree(s){return 1+s.children.reduce((a,c)=>a+countTree(c),0);}
+function copySelection(){
+  const ids = group.size? [...group] : (sel?[sel]:[]);
+  if(!ids.length){toast("Pick a node first");return;}
+  clipboard=selectionRoots(ids).map(captureSubtree);
+  const cnt=clipboard.reduce((a,s)=>a+countTree(s),0);
+  syncInspector();
+  toast("Copied "+cnt+" node"+(cnt>1?"s":"")+" — select a node, then Paste");
+}
+function pasteInto(parentId){
+  if(!clipboard||!clipboard.length){toast("Nothing copied yet");return;}
+  const p=map.nodes[parentId]; if(!p){toast("Select a node to paste under");return;}
+  let made=0;
+  const place=(sub,pid,ox,oy)=>{
+    const s=sub.node, id=uid(), par=map.nodes[pid];
+    map.nodes[id]={id,text:s.text,x:par.x+ox,y:par.y+oy,parentId:pid,
+      type:s.type,color:s.color,done:s.done,notes:s.notes,collapsed:false,icon:s.icon};
+    made++;
+    sub.children.forEach((c,i)=>place(c,id,180,i*64-(sub.children.length-1)*32));
+    return id;
+  };
+  clipboard.forEach((sub,i)=>place(sub,parentId,180,i*64+64));
+  p.collapsed=false;
+  snapshot(); if(map.auto)autoLayout(); render(); persist();
+  toast("Pasted "+made+" node"+(made>1?"s":"")+" under \""+p.text.slice(0,16)+"\"");
+}
+function deleteSelection(){
+  const ids = group.size? [...group] : (sel?[sel]:[]);
+  const targets=selectionRoots(ids).filter(id=>id!==map.rootId);
+  if(!targets.length){toast("Can't delete the central node");return;}
+  let removed=0;
+  for(const id of targets)for(const d of [id,...descendants(id)]){
+    const im=map.nodes[d]&&map.nodes[d].img; if(im)deleteImageRef(im); removed++;}
+  for(const id of targets){for(const d of descendants(id))delete map.nodes[d]; delete map.nodes[id];}
+  group.clear(); sel=null; snapshot(); if(map.auto)autoLayout(); render(); persist();
+  toast("Deleted "+removed+" node"+(removed>1?"s":""));
+}
 function syncInspector(){
   const ins=document.getElementById('inspector');
   if(!sel||!map.nodes[sel]){ins.classList.remove('show');return;}
@@ -465,6 +538,17 @@ function syncInspector(){
   document.getElementById('notes').value=n.notes||"";
   document.getElementById('btnRmImg').style.display=n.img?"":"none";
   document.getElementById('btnAddImg').textContent=n.img?"🖼 Replace image":"🖼 Add image";
+  // group / copy / paste state
+  const inGrp=group.has(sel);
+  const gb=document.getElementById('btnGroup');
+  gb.textContent=inGrp?"➖ Group":"＋ Group"; gb.classList.toggle('on',inGrp);
+  document.getElementById('btnPaste').classList.toggle('dis',!(clipboard&&clipboard.length));
+  const gi=document.getElementById('grpInfo');
+  if(group.size){gi.style.display="block";
+    gi.innerHTML=group.size+" node"+(group.size>1?"s":"")+" grouped · <a href=\"#\" id=\"grpClear\">clear</a>";
+    document.getElementById('grpClear').onclick=ev=>{ev.preventDefault();group.clear();render();};
+  }else gi.style.display="none";
+  document.getElementById('btnDel').textContent=group.size?("🗑 Delete group ("+group.size+")"):"🗑 Delete node + children";
 }
 
 //============================================================ inline editing
@@ -511,6 +595,7 @@ VP.addEventListener('pointerdown',e=>{
     const id=nodeEl.dataset.id;
     if(e.target.closest('.chk')){const n=map.nodes[id];n.done=!n.done;snapshot();render();persist();return;}
     if(editing===id)return;
+    if(e.shiftKey){toggleGroup(id);return;} // shift+click toggles group membership, no drag
     selectNode(id);
     const moving=[id,...descendants(id)];
     const start={};moving.forEach(m=>start[m]={x:map.nodes[m].x,y:map.nodes[m].y});
@@ -519,7 +604,7 @@ VP.addEventListener('pointerdown',e=>{
   }else{
     pan={sx:e.clientX,sy:e.clientY,ox:map.view.x,oy:map.view.y};
     VP.classList.add('panning');VP.setPointerCapture(e.pointerId);
-    sel=null;render();
+    sel=null;group.clear();render();
   }
 });
 VP.addEventListener('pointermove',e=>{
@@ -574,12 +659,14 @@ document.addEventListener('keydown',e=>{
   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();return e.shiftKey?redo():undo();}
   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='y'){e.preventDefault();return redo();}
   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();return saveMap();}
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='c'){if(sel||group.size){e.preventDefault();copySelection();}return;}
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='v'){if(sel){e.preventDefault();pasteInto(sel);}return;}
   if(e.key==='/'){e.preventDefault();return openCapture();}
+  if((e.key==='Delete'||e.key==='Backspace')&&(sel||group.size)){e.preventDefault();return deleteSelection();}
   if(!sel)return;
   if(e.key==='Tab'){e.preventDefault();addChild(sel);}
   else if(e.key==='Enter'){e.preventDefault();addSibling(sel);}
   else if(e.key==='F2'){e.preventDefault();startEdit(sel);}
-  else if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();deleteNode(sel);}
 });
 
 //============================================================ inspector controls
@@ -601,7 +688,10 @@ document.getElementById('btnAddSib').onclick=()=>quickAdd('sibling');
 document.getElementById('btnAddImg').onclick=addImageToNode;
 document.getElementById('btnRmImg').onclick=removeImageFromNode;
 document.getElementById('imgFile').addEventListener('change',e=>{const f=e.target.files[0];e.target.value="";onImagePicked(f);});
-document.getElementById('btnDel').onclick=()=>{if(sel)deleteNode(sel);};
+document.getElementById('btnDel').onclick=()=>{if(sel||group.size)deleteSelection();};
+document.getElementById('btnGroup').onclick=()=>{if(sel)toggleGroup(sel);};
+document.getElementById('btnCopy').onclick=copySelection;
+document.getElementById('btnPaste').onclick=()=>{if(sel)pasteInto(sel);};
 
 //============================================================ toolbar
 document.getElementById('mapName').addEventListener('change',e=>{map.name=e.target.value||"Untitled";map.updated=now();persist();});
