@@ -925,8 +925,12 @@ function showModal(html){
   if(!m){m=document.createElement('div');m.id='modal';
     m.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:60;display:flex;align-items:center;justify-content:center;";
     m.onclick=e=>{if(e.target===m)closeModal();};document.body.appendChild(m);}
-  m.innerHTML=`<div style="background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;width:340px;max-height:80vh;overflow:auto;box-shadow:var(--shadow);">${html}</div>`;
+  m.innerHTML=`<div style="position:relative;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;width:min(340px,92vw);max-height:80vh;overflow:auto;box-shadow:var(--shadow);">
+    <button id="modalClose" title="close" style="position:absolute;top:8px;right:8px;width:36px;height:36px;border:none;border-radius:50%;background:var(--bg2);color:var(--txt);font-size:18px;line-height:1;cursor:pointer;z-index:2;">✕</button>
+    <div style="padding-right:30px;">${html}</div>
+  </div>`;
   m.style.display='flex';
+  document.getElementById('modalClose').onclick=closeModal;
 }
 function closeModal(){const m=document.getElementById('modal');if(m)m.style.display='none';}
 
