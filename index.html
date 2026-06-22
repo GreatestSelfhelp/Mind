@@ -228,7 +228,8 @@
 </div>
 
 <div id="capbar">
-  <h3>⚡ Quick capture</h3>
+  <button id="capClose" title="close" style="position:absolute;top:8px;right:8px;width:34px;height:34px;border:none;border-radius:50%;background:var(--bg2);color:var(--txt);font-size:18px;line-height:1;cursor:pointer;">✕</button>
+  <h3 style="padding-right:30px;">⚡ Quick capture</h3>
   <small>Drops into your <b>Inbox</b> map. Enter to save · Esc to close.</small>
   <input id="capInput" placeholder="What's on your mind?">
 </div>
@@ -1013,6 +1014,7 @@ function openCapture(){
   const inp=document.getElementById('capInput');inp.value="";setTimeout(()=>inp.focus(),30);
 }
 function closeCapture(){document.getElementById('capbar').classList.remove('show');}
+document.getElementById('capClose').onclick=closeCapture;
 document.getElementById('capInput').addEventListener('keydown',e=>{
   if(e.key==='Escape'){closeCapture();}
   if(e.key==='Enter'){
