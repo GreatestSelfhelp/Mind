@@ -58,6 +58,7 @@
     user-select:none;transition:border-color .12s,box-shadow .12s;word-wrap:break-word;}
   .node.root{font-size:16px;font-weight:700;padding:12px 18px;filter:brightness(1.08);}
   .node .icon{margin-right:5px;}
+  .node .nimg{display:block;margin-top:8px;max-width:200px;max-height:150px;width:auto;border-radius:8px;border:1px solid var(--line);}
   .node.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent),var(--shadow);}
   .node[data-type=task]{border-left-color:var(--task);}
   .node[data-type=note]{border-left-color:var(--note);}
@@ -268,6 +269,12 @@
     <button class="emojibtn" data-e="✅">✅</button>
     <button class="emojibtn" data-e="🚀">🚀</button>
   </div>
+  <h4 style="margin-top:2px;">Image</h4>
+  <div class="row" id="imgRow">
+    <button class="addbtn" id="btnAddImg" style="background:var(--panel2);color:var(--txt);border:1px solid var(--line);">🖼 Add image</button>
+    <button class="addbtn" id="btnRmImg" style="display:none;background:#3a1f23;color:#ff9b9b;border:1px solid #5b2a2f;">🗑 Remove image</button>
+    <input type="file" id="imgFile" accept="image/*" style="display:none;">
+  </div>
   <textarea id="notes" placeholder="notes / details…"></textarea>
   <button class="del" id="btnDel">🗑 Delete node + children</button>
 </div>
@@ -372,6 +379,7 @@ function render(){
     inner+=`<span class="ntext">${escapeHtml(n.text)}</span>`;
     if(kids.length)inner+=`<span class="collapse">${n.collapsed?'+':'−'}</span>`;
     el.innerHTML=inner;
+    if(n.img)addThumb(el,n.img);
     if(q){ const match=n.text.toLowerCase().includes(q)||(n.notes||"").toLowerCase().includes(q);
       el.classList.toggle('hit',match); el.classList.toggle('dim',!match);}
     WORLD.appendChild(el);nodeEls.set(n.id,el);
@@ -438,6 +446,7 @@ function centerOn(id){
 }
 function deleteNode(id){
   if(id===map.rootId){toast("Can't delete the central node");return;}
+  for(const d of [id,...descendants(id)]){const im=map.nodes[d]&&map.nodes[d].img;if(im)deleteImageRef(im);}
   for(const d of descendants(id))delete map.nodes[d];
   delete map.nodes[id];sel=null;snapshot();if(map.auto)autoLayout();render();persist();toast("Deleted");
 }
@@ -453,6 +462,8 @@ function syncInspector(){
   document.getElementById('iconInput').value=n.icon||"";
   const ti=document.getElementById('titleInput');if(document.activeElement!==ti)ti.value=n.text||"";
   document.getElementById('notes').value=n.notes||"";
+  document.getElementById('btnRmImg').style.display=n.img?"":"none";
+  document.getElementById('btnAddImg').textContent=n.img?"🖼 Replace image":"🖼 Add image";
 }
 
 //============================================================ inline editing
@@ -586,6 +597,9 @@ document.getElementById('titleInput').addEventListener('keydown',e=>{if(e.key===
 document.getElementById('btnInsClose').onclick=()=>{sel=null;render();};
 document.getElementById('btnAddChild').onclick=()=>quickAdd('child');
 document.getElementById('btnAddSib').onclick=()=>quickAdd('sibling');
+document.getElementById('btnAddImg').onclick=addImageToNode;
+document.getElementById('btnRmImg').onclick=removeImageFromNode;
+document.getElementById('imgFile').addEventListener('change',e=>{const f=e.target.files[0];e.target.value="";onImagePicked(f);});
 document.getElementById('btnDel').onclick=()=>{if(sel)deleteNode(sel);};
 
 //============================================================ toolbar
@@ -750,6 +764,76 @@ async function saveMap(){
 setInterval(()=>{if(dirHandle)folderSave();},5*60*1000);
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&dirHandle)folderSave();});
 window.addEventListener('pagehide',()=>{if(dirHandle)folderSave();});
+
+//============================================================ images on nodes
+const _imgURLCache=new Map(); // folder filename -> objectURL
+// shrink any picked image to a small JPEG data-URL (fast sync, tiny storage)
+function fileToSmallDataURL(file,maxDim=900,quality=0.82){
+  return new Promise((res,rej)=>{
+    const fr=new FileReader();
+    fr.onload=()=>{const img=new Image();
+      img.onload=()=>{let w=img.width,h=img.height;const sc=Math.min(1,maxDim/Math.max(w,h));
+        w=Math.round(w*sc);h=Math.round(h*sc);
+        const c=document.createElement('canvas');c.width=w;c.height=h;
+        c.getContext('2d').drawImage(img,0,0,w,h);
+        res(c.toDataURL('image/jpeg',quality));};
+      img.onerror=rej;img.src=fr.result;};
+    fr.onerror=rej;fr.readAsDataURL(file);
+  });
+}
+function dataURLtoBlob(d){const b=atob(d.slice(d.indexOf(',')+1));const u=new Uint8Array(b.length);
+  for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return new Blob([u],{type:'image/jpeg'});}
+
+// resolve a node.img reference to a usable <img src> (cloud=URL, folder=objectURL)
+function addThumb(el,ref){
+  const im=document.createElement('img');im.className='nimg';im.draggable=false;el.appendChild(im);
+  if(/^https?:|^\/img\//.test(ref)){im.src=ref;return;}      // cloud
+  if(_imgURLCache.has(ref)){im.src=_imgURLCache.get(ref);return;} // folder, cached
+  folderReadImageURL(ref).then(u=>{if(u){_imgURLCache.set(ref,u);im.src=u;}}); // folder, async
+}
+async function folderReadImageURL(ref){
+  if(!dirHandle)return null;
+  try{const dir=await dirHandle.getDirectoryHandle('images');const fh=await dir.getFileHandle(ref.split('/').pop());
+    return URL.createObjectURL(await fh.getFile());}catch{return null;}
+}
+async function folderWriteImage(name,blob){
+  const dir=await dirHandle.getDirectoryHandle('images',{create:true});
+  const fh=await dir.getFileHandle(name,{create:true});
+  const w=await fh.createWritable();await w.write(blob);await w.close();
+}
+async function cloudUploadImage(dataUrl){
+  const r=await fetch('/api/upload',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+auth.token},body:JSON.stringify({data:dataUrl})});
+  const j=await r.json();if(!r.ok)throw new Error(j.error||'upload failed');return j.url;
+}
+function deleteImageRef(ref){ // best-effort cleanup
+  if(!ref)return;
+  if(/^https?:|^\/img\//.test(ref)){ if(auth&&auth.token)fetch('/api/img-delete',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+auth.token},body:JSON.stringify({url:ref})}).catch(()=>{}); }
+  else if(dirHandle){ dirHandle.getDirectoryHandle('images').then(d=>d.removeEntry(ref.split('/').pop())).catch(()=>{}); }
+}
+async function addImageToNode(){
+  if(!sel)return;
+  if(!CLOUD && !dirHandle){toast("Link a 📁 folder first to attach images");return;}
+  document.getElementById('imgFile').click();
+}
+async function onImagePicked(file){
+  if(!file||!sel)return;
+  toast("Adding image…");
+  try{
+    const dataUrl=await fileToSmallDataURL(file);
+    let ref;
+    if(CLOUD && auth.token){ ref=await cloudUploadImage(dataUrl); }   // private build → server
+    else if(dirHandle){ const name=uid()+'.jpg'; await folderWriteImage(name,dataURLtoBlob(dataUrl)); ref='images/'+name; }
+    else { toast("Link a 📁 folder first"); return; }
+    const old=map.nodes[sel].img; if(old)deleteImageRef(old);
+    map.nodes[sel].img=ref; snapshot(); render(); persist();
+    toast("Image added ✓");
+  }catch(e){console.warn(e);toast("Image failed: "+(e.message||"error"));}
+}
+function removeImageFromNode(){
+  if(!sel||!map.nodes[sel].img)return;
+  deleteImageRef(map.nodes[sel].img);
+  map.nodes[sel].img=""; snapshot(); render(); persist(); toast("Image removed");
+}
 
 //============================================================ maps panel
 function openMaps(){
